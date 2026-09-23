@@ -5,7 +5,9 @@ const {
   getMyDonations,
   getDonationById,
   updateDonation,
-  cancelDonation
+  cancelDonation,
+  claimDonation,
+  completeDonation
 } = require('../controllers/donationController');
 const { protect } = require('../middlewares/authMiddleware');
 const { authorize } = require('../middlewares/roleMiddleware');
@@ -26,4 +28,10 @@ router.post('/', protect, authorize('donor'), createDonation);
 router.put('/:id', protect, authorize('donor'), updateDonation);
 router.delete('/:id', protect, authorize('donor'), cancelDonation);
 
+// NGO actions: claim and complete pickup
+// authorize('ngo') enforces role; verificationStatus checked in controller
+router.post('/:id/claim', protect, authorize('ngo'), claimDonation);
+router.post('/:id/complete', protect, authorize('ngo'), completeDonation);
+
 module.exports = router;
+
