@@ -21,13 +21,21 @@ api.interceptors.request.use(
   }
 );
 
-// Response Interceptor: Standardize error extraction
+// Response Interceptor: Standardize error extraction and handle expired tokens
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status || 500;
+    const message = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+
+    // If token expired/invalid (and not the login attempt itself), clear token
+    if (status === 401 && !error.config?.url?.includes('/auth/login')) {
+      localStorage.removeItem('token');
+    }
+
     const customError = {
-      status: error.response?.status || 500,
-      message: error.response?.data?.message || error.message || 'An unexpected error occurred.'
+      status,
+      message
     };
     return Promise.reject(customError);
   }

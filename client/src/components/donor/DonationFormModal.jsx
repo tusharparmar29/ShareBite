@@ -114,6 +114,7 @@ const DonationFormModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     // Client-side quick checks
     if (!formData.foodName.trim()) {

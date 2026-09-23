@@ -27,6 +27,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (!formData.email.trim() || !formData.password) {
       setErrorMessage('Please provide both email and password.');

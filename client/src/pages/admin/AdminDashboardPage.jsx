@@ -171,7 +171,7 @@ const AdminDashboardPage = () => {
 
   // Handle Verify / Reject Action
   const handleExecuteVerification = async () => {
-    if (!verificationAction) return;
+    if (!verificationAction || isProcessingAction) return;
     const { ngo, targetStatus } = verificationAction;
 
     setIsProcessingAction(true);

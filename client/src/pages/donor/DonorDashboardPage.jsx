@@ -109,7 +109,7 @@ const DonorDashboardPage = () => {
 
   // Handle Cancel Action
   const handleConfirmCancel = async () => {
-    if (!cancellingDonation) return;
+    if (!cancellingDonation || isCancelling) return;
 
     setIsCancelling(true);
     try {

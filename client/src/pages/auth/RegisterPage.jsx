@@ -36,6 +36,7 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
     if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
       setErrorMessage('Please fill in all required fields (Name, Email, Password).');

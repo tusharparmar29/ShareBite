@@ -157,7 +157,7 @@ const NgoDashboardPage = () => {
   };
 
   const handleConfirmClaim = async () => {
-    if (!claimingDonation) return;
+    if (!claimingDonation || isClaiming) return;
 
     setIsClaiming(true);
     try {
@@ -187,7 +187,7 @@ const NgoDashboardPage = () => {
   };
 
   const handleConfirmComplete = async () => {
-    if (!completingDonation) return;
+    if (!completingDonation || isCompleting) return;
 
     setIsCompleting(true);
     try {
