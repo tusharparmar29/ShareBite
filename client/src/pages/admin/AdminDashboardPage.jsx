@@ -912,9 +912,17 @@ const AdminDashboardPage = () => {
       >
         {inspectDonation && (
           <div className="space-y-4 text-xs">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-sm font-bold text-gray-900">{inspectDonation.foodName}</span>
-              <StatusBadge status={inspectDonation.status} type="status" />
+              <div className="flex items-center gap-1.5">
+                <StatusBadge status={inspectDonation.status} type="status" />
+                {inspectDonation.expiryStatus && (
+                  <StatusBadge status={inspectDonation.expiryStatus} type="expiry" />
+                )}
+                {typeof inspectDonation.priorityScore === 'number' && (
+                  <StatusBadge status={inspectDonation.priorityScore} type="priority" />
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
