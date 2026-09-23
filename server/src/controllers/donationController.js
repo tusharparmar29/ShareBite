@@ -4,6 +4,8 @@ const {
   validateUpdateDonation,
   isValidObjectId
 } = require('../validators/donationValidator');
+const { getExpiryStatus } = require('../services/expiryService');
+
 
 // @desc    Create a new food donation
 // @route   POST /api/donations
@@ -88,11 +90,18 @@ const getDonations = async (req, res, next) => {
       .skip(skip)
       .limit(pageSize);
 
+    // Attach dynamically-calculated expiryStatus without writing to DB
+    const donationsWithExpiry = donations.map((d) => {
+      const obj = d.toObject();
+      obj.expiryStatus = getExpiryStatus(d);
+      return obj;
+    });
+
     res.status(200).json({
       success: true,
       message: 'Donations retrieved successfully',
       data: {
-        donations,
+        donations: donationsWithExpiry,
         pagination: {
           total,
           page: pageNumber,
@@ -126,10 +135,16 @@ const getMyDonations = async (req, res, next) => {
       .populate('claimedBy', 'name email phone')
       .sort({ createdAt: -1 });
 
+    const donationsWithExpiry = donations.map((d) => {
+      const obj = d.toObject();
+      obj.expiryStatus = getExpiryStatus(d);
+      return obj;
+    });
+
     res.status(200).json({
       success: true,
       message: 'Your donations retrieved successfully',
-      data: { donations }
+      data: { donations: donationsWithExpiry }
     });
   } catch (error) {
     next(error);
@@ -164,7 +179,12 @@ const getDonationById = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Donation details retrieved successfully',
-      data: { donation }
+      data: {
+        donation: {
+          ...donation.toObject(),
+          expiryStatus: getExpiryStatus(donation)
+        }
+      }
     });
   } catch (error) {
     next(error);
