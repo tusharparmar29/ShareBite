@@ -95,6 +95,19 @@ const Navbar = () => {
               Home
             </Link>
 
+            {isDonor && (
+              <Link
+                to="/donor/dashboard"
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname.startsWith('/donor')
+                    ? 'text-emerald-600 bg-emerald-50'
+                    : 'text-gray-700 hover:text-emerald-600 hover:bg-gray-50'
+                }`}
+              >
+                Dashboard
+              </Link>
+            )}
+
             {isAuthenticated ? (
               <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-gray-200">
                 {/* User Info & Badges */}
