@@ -1,0 +1,26 @@
+# Environment variables
+.env
+*.env
+
+# Backend dependencies
+Server/node_modules/
+
+# Frontend dependencies
+Client/node_modules/
+
+# Document of project
+Docs/
+
+# Uploads
+Server/uploads/
+
+# Build folders
+Client/dist/
+Server/dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
