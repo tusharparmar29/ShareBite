@@ -5,6 +5,7 @@ const {
   isValidObjectId
 } = require('../validators/donationValidator');
 const { getExpiryStatus } = require('../services/expiryService');
+const { getPriorityScore } = require('../services/priorityService');
 
 
 // @desc    Create a new food donation
@@ -90,10 +91,11 @@ const getDonations = async (req, res, next) => {
       .skip(skip)
       .limit(pageSize);
 
-    // Attach dynamically-calculated expiryStatus without writing to DB
+    // Attach dynamically-calculated expiryStatus and priorityScore without writing to DB
     const donationsWithExpiry = donations.map((d) => {
       const obj = d.toObject();
       obj.expiryStatus = getExpiryStatus(d);
+      obj.priorityScore = getPriorityScore(d);
       return obj;
     });
 
@@ -138,6 +140,7 @@ const getMyDonations = async (req, res, next) => {
     const donationsWithExpiry = donations.map((d) => {
       const obj = d.toObject();
       obj.expiryStatus = getExpiryStatus(d);
+      obj.priorityScore = getPriorityScore(d);
       return obj;
     });
 
@@ -182,7 +185,8 @@ const getDonationById = async (req, res, next) => {
       data: {
         donation: {
           ...donation.toObject(),
-          expiryStatus: getExpiryStatus(donation)
+          expiryStatus: getExpiryStatus(donation),
+          priorityScore: getPriorityScore(donation)
         }
       }
     });
