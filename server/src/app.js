@@ -40,6 +40,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// API Routes
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
+
 // 404 Route handler
 app.use(notFoundHandler);
 
