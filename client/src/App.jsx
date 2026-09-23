@@ -8,6 +8,7 @@ import RegisterPage from './pages/auth/RegisterPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DonorDashboardPage from './pages/donor/DonorDashboardPage';
+import NgoDashboardPage from './pages/ngo/NgoDashboardPage';
 
 function App() {
   return (
@@ -23,6 +24,12 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['donor']} />}>
               <Route path="donor" element={<Navigate to="/donor/dashboard" replace />} />
               <Route path="donor/dashboard" element={<DonorDashboardPage />} />
+            </Route>
+
+            {/* NGO Protected Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['ngo']} />}>
+              <Route path="ngo" element={<Navigate to="/ngo/dashboard" replace />} />
+              <Route path="ngo/dashboard" element={<NgoDashboardPage />} />
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
