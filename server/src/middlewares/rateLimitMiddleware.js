@@ -1,9 +1,13 @@
 const rateLimit = require('express-rate-limit');
 
-// General API rate limiter (15 minutes window, 100 requests max per IP)
+// General API rate limiter
+// In test environment the limit is raised so the test suite does not hit 429.
+// In production this enforces 100 requests per 15 minutes per IP.
+const isTest = process.env.NODE_ENV === 'test';
+
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: isTest ? 5000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res) => {
