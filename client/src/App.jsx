@@ -9,6 +9,7 @@ import NotFoundPage from './pages/NotFoundPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import DonorDashboardPage from './pages/donor/DonorDashboardPage';
 import NgoDashboardPage from './pages/ngo/NgoDashboardPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 
 function App() {
   return (
@@ -30,6 +31,12 @@ function App() {
             <Route element={<ProtectedRoute allowedRoles={['ngo']} />}>
               <Route path="ngo" element={<Navigate to="/ngo/dashboard" replace />} />
               <Route path="ngo/dashboard" element={<NgoDashboardPage />} />
+            </Route>
+
+            {/* Admin Protected Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="admin/dashboard" element={<AdminDashboardPage />} />
             </Route>
 
             <Route path="*" element={<NotFoundPage />} />
