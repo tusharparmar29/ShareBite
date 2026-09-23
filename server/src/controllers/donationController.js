@@ -1,0 +1,317 @@
+const Donation = require('../models/Donation');
+const {
+  validateCreateDonation,
+  validateUpdateDonation,
+  isValidObjectId
+} = require('../validators/donationValidator');
+
+// @desc    Create a new food donation
+// @route   POST /api/donations
+// @access  Private (Donor only)
+const createDonation = async (req, res, next) => {
+  try {
+    const { isValid, errors } = validateCreateDonation(req.body);
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: errors.join(' ')
+      });
+    }
+
+    const {
+      foodName,
+      foodType,
+      quantity,
+      quantityUnit,
+      description,
+      preparationTime,
+      storageMethod,
+      pickupLocation,
+      pickupDeadline,
+      image
+    } = req.body;
+
+    const donation = await Donation.create({
+      donor: req.user._id,
+      foodName: foodName.trim(),
+      foodType: foodType.trim(),
+      quantity,
+      quantityUnit: quantityUnit ? quantityUnit.trim() : 'servings',
+      description: description ? description.trim() : '',
+      preparationTime: new Date(preparationTime),
+      storageMethod: storageMethod.trim(),
+      pickupLocation: pickupLocation.trim(),
+      pickupDeadline: new Date(pickupDeadline),
+      image: image ? image.trim() : '',
+      status: 'AVAILABLE'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Donation created successfully',
+      data: { donation }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Browse / filter donations
+// @route   GET /api/donations
+// @access  Public
+const getDonations = async (req, res, next) => {
+  try {
+    const { status, foodType, city, page = 1, limit = 10 } = req.query;
+
+    const query = {};
+
+    if (status) {
+      query.status = status.toUpperCase();
+    }
+
+    if (foodType) {
+      query.foodType = { $regex: foodType, $options: 'i' };
+    }
+
+    if (city) {
+      query.pickupLocation = { $regex: city, $options: 'i' };
+    }
+
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit, 10) || 10));
+    const skip = (pageNumber - 1) * pageSize;
+
+    const total = await Donation.countDocuments(query);
+    const donations = await Donation.find(query)
+      .populate('donor', 'name email phone city')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize);
+
+    res.status(200).json({
+      success: true,
+      message: 'Donations retrieved successfully',
+      data: {
+        donations,
+        pagination: {
+          total,
+          page: pageNumber,
+          limit: pageSize,
+          pages: Math.ceil(total / pageSize)
+        }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get current user's donations (Donor's own donations or NGO's claimed donations)
+// @route   GET /api/donations/my
+// @access  Private
+const getMyDonations = async (req, res, next) => {
+  try {
+    const query = {};
+
+    if (req.user.role === 'donor') {
+      query.donor = req.user._id;
+    } else if (req.user.role === 'ngo') {
+      query.claimedBy = req.user._id;
+    } else if (req.user.role === 'admin') {
+      // Admins see all donations
+    }
+
+    const donations = await Donation.find(query)
+      .populate('donor', 'name email phone city')
+      .populate('claimedBy', 'name email phone')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      message: 'Your donations retrieved successfully',
+      data: { donations }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get donation details by ID
+// @route   GET /api/donations/:id
+// @access  Public / Authenticated
+const getDonationById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid donation ID format.'
+      });
+    }
+
+    const donation = await Donation.findById(id)
+      .populate('donor', 'name email phone city')
+      .populate('claimedBy', 'name email phone');
+
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation not found.'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Donation details retrieved successfully',
+      data: { donation }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update donation (Donor owner only)
+// @route   PUT /api/donations/:id
+// @access  Private (Donor only)
+const updateDonation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid donation ID format.'
+      });
+    }
+
+    const donation = await Donation.findById(id);
+
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation not found.'
+      });
+    }
+
+    // Ownership check: must be the creator
+    if (donation.donor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access forbidden: You do not have permission to update this donation.'
+      });
+    }
+
+    // Status check: only AVAILABLE donations can be edited
+    if (donation.status !== 'AVAILABLE') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot update donation. Only AVAILABLE donations can be edited, but status is '${donation.status}'.`
+      });
+    }
+
+    const { isValid, errors } = validateUpdateDonation(req.body);
+    if (!isValid) {
+      return res.status(400).json({
+        success: false,
+        message: errors.join(' ')
+      });
+    }
+
+    const updatableFields = [
+      'foodName',
+      'foodType',
+      'quantity',
+      'quantityUnit',
+      'description',
+      'preparationTime',
+      'storageMethod',
+      'pickupLocation',
+      'pickupDeadline',
+      'image'
+    ];
+
+    updatableFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        if (field === 'preparationTime' || field === 'pickupDeadline') {
+          donation[field] = new Date(req.body[field]);
+        } else if (typeof req.body[field] === 'string') {
+          donation[field] = req.body[field].trim();
+        } else {
+          donation[field] = req.body[field];
+        }
+      }
+    });
+
+    const updatedDonation = await donation.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Donation updated successfully',
+      data: { donation: updatedDonation }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Cancel donation (Donor owner only)
+// @route   DELETE /api/donations/:id
+// @access  Private (Donor only)
+const cancelDonation = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid donation ID format.'
+      });
+    }
+
+    const donation = await Donation.findById(id);
+
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation not found.'
+      });
+    }
+
+    // Ownership check
+    if (donation.donor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access forbidden: You do not have permission to cancel this donation.'
+      });
+    }
+
+    // Status check: only active AVAILABLE can be cancelled
+    if (donation.status !== 'AVAILABLE') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel donation. Only AVAILABLE donations can be cancelled, but status is '${donation.status}'.`
+      });
+    }
+
+    donation.status = 'CANCELLED';
+    await donation.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Donation cancelled successfully',
+      data: { donation }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createDonation,
+  getDonations,
+  getMyDonations,
+  getDonationById,
+  updateDonation,
+  cancelDonation
+};

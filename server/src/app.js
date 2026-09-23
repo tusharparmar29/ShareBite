@@ -42,7 +42,10 @@ app.get('/api/health', (req, res) => {
 
 // API Routes
 const authRoutes = require('./routes/authRoutes');
+const donationRoutes = require('./routes/donationRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/donations', donationRoutes);
 
 // 404 Route handler
 app.use(notFoundHandler);
